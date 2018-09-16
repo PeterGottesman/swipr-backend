@@ -90,8 +90,18 @@ def makeBids(count):
                                uid=random.randrange(0,100)))
     cursor.commit()
 
+def changePhotos():
+    cursor = conn.cursor()
+    for i in range(100):
+        cursor.execute("UPDATE users SET photo = '{pic}' WHERE uid='{uid}'"
+                       .format(pic=random.choice(pics),
+                               uid=i+1))
+
+    cursor.commit()
+
 if __name__ == "__main__":
     # users = getUsers(10)
     # for user in users:
     #     insertUser(user)
-    makeBids(15)
+#    makeBids(15)
+    changePhotos()
