@@ -5,7 +5,7 @@ import secrets
 from flask import Flask
 
 app = Flask(__name__)
-conn = pyodbc.connect('DRIVER={ODBC Driver 13 for SQL Server};SERVER='+
+conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+
                       secrets.url+';PORT=1433;DATABASE='+
                       secrets.db+';UID='+
                       secrets.username+';PWD='+
