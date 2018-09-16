@@ -18,7 +18,7 @@ def homepage():
 
 def user(uid):
     cursor = conn.cursor()
-    cursor.execute("SELECT * from users WHERE uid = '{}'".format(uid))
+    cursor.execute("SELECT * from users WHERE uid=?", uid)
     row = cursor.fetchone()
     if row is None:
         return None
@@ -36,7 +36,7 @@ def user(uid):
 
 def bids(buy):
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM bids WHERE buy = '{}'".format(buy))
+    cursor.execute("SELECT * FROM bids WHERE buy=?", buy)
     rows = cursor.fetchall()
     output = []
     for row in rows:
@@ -64,16 +64,14 @@ def pubUser(uid):
 
 def createBid(buy, price, location, uid):
     cursor = conn.cursor()
-    cursor.execute("""INSERT INTO bids VALUES
-('{buy}', '{price}', '{location}', '{uid}', GETDATE())"""
-                   .format(buy=buy,price=price,location=location,uid=uid))
+    cursor.execute("""INSERT INTO bids VALUES (?, ?, ?, ?, GETDATE())""",
+                   (buy,price,location,uid))
     cursor.commit()
 #    return cursor.execute("SELECT max(id) FROM bids").fetchone()
 
 def completeTransaction(bidId):
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM bids WHERE id={}"
-                   .format(bidId))
+    cursor.execute("SELECT * FROM bids WHERE id=?", bidId)
     row = cursor.fetchone()
     if row is None or len(row) == 0:
         return None
@@ -111,17 +109,17 @@ def sendMsg():
     content = in_json["content"]
     cursor = conn.cursor()
     cursor.execute("""IF NOT EXISTS
-(SELECT id FROM chat WHERE (user1 = {u1} AND user2 = {u2}) OR (user1 = {u2} AND user2 = {u1}))
-INSERT INTO chat VALUES ('{u1}', '{u2}', null)"""
-    .format(u1=sender, u2=partner))
+(SELECT id FROM chat WHERE (user1=? AND user2=?) OR (user1=? AND user2=?))
+INSERT INTO chat VALUES (?, ?, null)""",
+                   [sender, partner, partner, sender, partner, sender])
 
     cursor.commit()
     
     cursor.execute("""
 INSERT INTO messages
-VALUES ({sender}, (SELECT id FROM chat WHERE (user1 = {u1} AND user2 = {u2}) OR (user1 = {u2} AND user2 = {u1})),
- '{content}', GETDATE())"""
-                   .format(sender=sender, u1=sender, u2=partner, content=content))
+VALUES (?, (SELECT id FROM chat WHERE  WHERE (user1=? AND user2=?) 
+OR (user1=? AND user2=?)),
+?, GETDATE())""", [sender, sender, partner,partner, sender, content])
     cursor.commit()
     return getMessages(sender, partner)
     
@@ -132,12 +130,11 @@ def getMessages(u1, u2):
     cursor.execute("""SELECT * from messages mess
 INNER JOIN
 (
-SELECT id FROM chat WHERE (user1 = {u2} AND user2 = {u1})
-OR (user1 = {u1} AND user2 = {u2})
+SELECT id FROM chat WHERE (user1=? AND user2=?)
+OR (user1=? AND user2=?)
 ) chats
 ON chats.id = mess.chat
-"""
-                   .format(u1=u1, u2=u2))
+""", [u1, u2, u2, u1])
     messages = cursor.fetchall()
     output = []
     for message in messages:
