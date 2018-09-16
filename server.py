@@ -3,7 +3,7 @@
 import pyodbc
 import json
 import secrets
-from flask import Flask
+from flask import Flask, request
 
 app = Flask(__name__)
 conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+
