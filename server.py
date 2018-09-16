@@ -15,6 +15,7 @@ conn = pyodbc.connect('DRIVER={ODBC Driver 13 for SQL Server};SERVER='+
 def homepage():
     return "Tristan Wiley is a fake"
 
+@app.route("/user/<uid>")
 def user(uid):
     cursor = conn.cursor()
     cursor.execute("SELECT * from users WHERE uid = '{}'".format(uid))
