@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import pyodbc
+import json
 import secrets
 from flask import Flask
 
@@ -15,7 +16,6 @@ conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+
 def homepage():
     return "Tristan Wiley is a fake"
 
-@app.route("/user/<uid>")
 def user(uid):
     cursor = conn.cursor()
     cursor.execute("SELECT * from users WHERE uid = '{}'".format(uid))
@@ -29,8 +29,8 @@ def user(uid):
         "email": row[3],
         "photo": row[4],
         "bio": row[5],
-        "rating": row[5],
-        "td_id": row[6]
+        "rating": float(row[6]),
+        "td_id": row[7]
         }
     return user
 
@@ -43,7 +43,7 @@ def bids(buy):
         output.append( {
             "id" : row[0],
             "buy" : row[1],
-            "price" : row[2],
+            "price" : float(row[2]),
             "location" : row[3],
             "user" : user(row[4]),
             "timestamp" : str(row[5])
@@ -52,11 +52,15 @@ def bids(buy):
 
 @app.route("/buys", methods=["GET"])
 def buys():
-    return str(bids(True))
+    return json.dumps(bids(True))
         
 @app.route("/sells", methods=["GET"])
 def sells():
-    return str(bids(False))
+    return json.dumps(bids(False))
+
+@app.route("/user/<uid>")
+def pubUser(uid):
+    return json.dumps(user(uid))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port="8080")
