@@ -62,24 +62,58 @@ def sells():
 def pubUser(uid):
     return json.dumps(user(uid))
 
-@app.route("/messaging/open", methods=["POST"])
-def openMsgs():
+def createBid(buy, price, location, uid):
+    cursor = conn.cursor()
+    cursor.execute("""INSERT INTO bids VALUES
+('{buy}', '{price}', '{location}', '{uid}', GETDATE())"""
+                   .format(buy=buy,price=price,location=location,uid=uid))
+    cursor.commit()
+#    return cursor.execute("SELECT max(id) FROM bids").fetchone()
+
+def completeTransaction(bidId):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM bids WHERE id={}"
+                   .format(bidId))
+    row = cursor.fetchone()
+    if row is None or len(row) == 0:
+        return None
+    
+    newBid = createBid(*row)
+
+    cursor.execute(""""INSERT INTO transactions
+""")
+    return
+
+@app.route("/bid/place", methods=["POST"])
+def makeBidPub():
+    # turn into json to resolve booleans
     in_json = request.get_json()
-    trans = in_json["transaction"]
-    user = in_json["user"]
+    sender = int(in_json["sender"])
+    buy = in_json["buy"]
+    price = float(in_json["price"])
+    location = in_json["location"]
+    print(in_json)
+    createBid(buy, price, location, sender)
+    if buy:
+        return buys()
+    return sells()
+    
+
+# @app.route("/messaging/complete", methods=["POST"])
+# def complete():
     
 
 @app.route("/messaging/send",methods=["POST"])
 def sendMsg():
     in_json = request.get_json()
     sender = int(in_json["sender"])
-    parter = int(in_json["parter"])
+    partner = int(in_json["partner"])
     content = in_json["content"]
     cursor = conn.cursor()
-    cursor.execute("""INSERT INTO chat VALUES ('{u1}', '{u2}', null)
-WHERE NOT EXISTS
-(SELECT id FROM chat WHERE (user1 = {u1} AND user2 = {u2}) OR (user1 = {u2} AND user2 = {u1}))"""
-    .format(u1=sender, u2=parter))
+    cursor.execute("""IF NOT EXISTS
+(SELECT id FROM chat WHERE (user1 = {u1} AND user2 = {u2}) OR (user1 = {u2} AND user2 = {u1}))
+INSERT INTO chat VALUES ('{u1}', '{u2}', null)"""
+    .format(u1=sender, u2=partner))
 
     cursor.commit()
     
@@ -87,9 +121,9 @@ WHERE NOT EXISTS
 INSERT INTO messages
 VALUES ({sender}, (SELECT id FROM chat WHERE (user1 = {u1} AND user2 = {u2}) OR (user1 = {u2} AND user2 = {u1})),
  '{content}', GETDATE())"""
-                   .format(sender=sender, u1=sender, u2=parter, content=content))
+                   .format(sender=sender, u1=sender, u2=partner, content=content))
     cursor.commit()
-    return getMessages(sender, parter)
+    return getMessages(sender, partner)
     
                     
 @app.route("/messaging/receive/<u1>/<u2>", methods=["GET"])
